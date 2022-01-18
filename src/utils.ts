@@ -6,6 +6,14 @@ export function getRandom(
    return Math.floor(Math.random() * (max - min)) + min
 }
 
+// Return a random 2 decimal float between min (inclusive) and max (exclusive)
+export function getRandomFloat(
+   min: number,
+   max: number)
+{
+   return Math.round((Math.random() * (max - min) + min) * 100) / 100
+}
+
 // Randomize array element order in-place using Durstenfeld shuffle algorithm
 export function shuffle(
    array: Array<any>)
@@ -25,8 +33,8 @@ export function closeWindow()
    // you're testing in the browser and the window keeps closing. If we're running in the browser
    // (testing in webpack-dev-server, for example) window.api won't be defined. It is only defined
    // when Electron runs the script in preload.ts, and that script calls contextBridge.exposeInMainWorld.
-   if(typeof (window as any).api !== "undefined")
-      window.close()
+   //if(typeof (window as any).api !== "undefined")
+   //   window.close()
 }
 
 export function delay(

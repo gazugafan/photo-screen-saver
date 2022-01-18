@@ -1,7 +1,7 @@
 import { useEffect, useReducer } from "react"
 import { Transition, TransitionGroup } from "react-transition-group"
 import classNames from "classnames"
-import { closeWindow, delay, getRandom, shuffle } from "./utils"
+import {closeWindow, delay, getRandom, getRandomFloat, shuffle} from "./utils"
 import { Photo } from "./photo"
 import { getFlickrPhotos } from "./flickrPhotos"
 import { getLocalPhotos } from "./localPhotos"
@@ -12,7 +12,7 @@ type GetPhotosFn = typeof getFlickrPhotos | typeof getLocalPhotos
 const GET_PHOTOS: GetPhotosFn = getFlickrPhotos
 
 // Keep these in sync with photoSlideshow.module.scss:
-const PHOTO_INTERVAL = 60
+const PHOTO_INTERVAL = 30
 const FADE_IN_DURATION = 5
 
 const SECONDS = 1000
@@ -83,14 +83,26 @@ export function PhotoSlideshow()
                   <>
                      <div
                         className={classNames(styles.photo, { [styles.visible]: state.isImageLoaded })}
-                        style={{ zIndex: state.zIndex, transformOrigin: `${state.origin.x}% ${state.origin.y}%` }}
+                        style={{ zIndex: state.zIndex }}
                      >
                         <img
+							className={styles.photoBackground}
                            src={state.photos[state.photoIdx].url}
                            alt=""
                            onLoad={onImageLoad}
                            onError={e => dispatch({ type: "next" })}
                         />
+                        <div
+							className={styles.photoForeground}
+							style={{transform: `scale(${state.scale})`, transformOrigin: `${state.origin.x}% ${state.origin.y}%`}}
+                        >
+							<img
+								src={state.photos[state.photoIdx].url}
+								alt=""
+								onLoad={onImageLoad}
+								onError={e => dispatch({ type: "next" })}
+							/>
+						</div>
                      </div>
                      <label
                         className={classNames(styles[`pos${state.photoIdx % 4}`], { [styles.visible]: state.isImageLoaded })}
@@ -112,6 +124,7 @@ interface State
    photoIdx: number,
    zIndex: number,
    origin: { x: number, y: number },
+   scale: number,
    isImageLoaded: boolean,
 }
 
@@ -121,6 +134,7 @@ const initialState: State =
    photoIdx: -1,
    zIndex: 0,
    origin: { x: 0, y: 0 },
+   scale: 1,
    isImageLoaded: false,
 }
 
@@ -155,6 +169,7 @@ function reducer(
             photoIdx: 0,
             zIndex: 1,
             origin: getRandomOrigin(),
+            scale: getRandomScale(),
             isImageLoaded: false
          }
 
@@ -164,17 +179,23 @@ function reducer(
             photoIdx: (state.photoIdx >= state.photos.length - 1) ? 0 : state.photoIdx + 1,
             zIndex: state.zIndex + 1,
             origin: getRandomOrigin(),
+            scale: getRandomScale(),
             isImageLoaded: false,
          }
 
       case "imageload":
-         return { ...state, isImageLoaded: true }
+         return { ...state, isImageLoaded: true, scale: getRandomScale() }
    }
 }
 
 function getRandomOrigin()
 {
    return { x: getRandom(0, 100), y: getRandom(0, 100) }
+}
+
+function getRandomScale()
+{
+   return getRandomFloat(0.8, 1.2)
 }
 
 function getCaption(

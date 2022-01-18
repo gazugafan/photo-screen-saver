@@ -1,25 +1,24 @@
-import fs from "fs"
 import { contextBridge } from "electron"
 import { LOCAL_FOLDER_PATH } from "./constants"
 import { Photo } from "./photo"
+import { glob } from "glob"
 
 contextBridge.exposeInMainWorld("api", { getLocalPhotos })
 
 function getLocalPhotos(): Photo[]
 {
-   let folderPath = LOCAL_FOLDER_PATH
-   if(!folderPath.endsWith("/"))
-      folderPath += "/"
+	let folderPath = LOCAL_FOLDER_PATH
+	if(!folderPath.endsWith("/"))
+		folderPath += "/"
 
-   const fileNames = fs.readdirSync(folderPath)
+	const fileNames = glob.sync("**/*.jp?(e)g", {cwd:folderPath})
 
-   const photos = fileNames
-      .filter(fn => fn.match(/\.(jpg|jpeg)$/i) != null)
-      .map(fn => ({
-         url: `file:///${folderPath}${fn}`,
-         title: "",
-         attribution: "",
-      }))
+	const photos = fileNames
+	.map(fn => ({
+		url: `file:///${folderPath}${fn}`,
+		title: "",
+		attribution: "",
+	}))
 
-   return photos
+	return photos
 }

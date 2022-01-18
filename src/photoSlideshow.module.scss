@@ -1,5 +1,5 @@
 // Keep these in sync with photoSlideshow.tsx:
-$PHOTO_INTERVAL: 60s;
+$PHOTO_INTERVAL: 30s;
 $FADE_IN_DURATION: 5s;
 
 .root
@@ -11,19 +11,39 @@ $FADE_IN_DURATION: 5s;
       height: 100vh;
       cursor: none;
       opacity: 0;
-      transition: opacity $FADE_IN_DURATION linear, transform ($PHOTO_INTERVAL + $FADE_IN_DURATION) linear;
+      transition: opacity $FADE_IN_DURATION linear;
+	   background: #000000;
 
       &.visible
       {
          opacity: 1;
-         transform: scale(1.3);
       }
 
-      img
+      img.photoBackground
       {
          width: 100%;
          height: 100%;
          object-fit: cover;
+		  filter: blur(10px) brightness(0.4);
+		  position: absolute;
+      }
+
+      div.photoForeground
+      {
+         width: 100%;
+         height: 100%;
+		  display:flex;
+		  justify-content: center;
+		  justify-items: center;
+		  transition: all ($PHOTO_INTERVAL + $FADE_IN_DURATION) linear;
+
+		  img
+		  {
+			  width: auto;
+			  height: auto;
+			  border: 10px solid white;
+			  box-shadow: 5px 5px 20px rgba(0,0,0,0.5);
+		  }
       }
    }
 
