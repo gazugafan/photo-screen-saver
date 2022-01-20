@@ -36,7 +36,7 @@ export function closeWindow()
    // (testing in webpack-dev-server, for example) window.api won't be defined. It is only defined
    // when Electron runs the script in preload.ts, and that script calls contextBridge.exposeInMainWorld.
    //if(typeof (window as any).api !== "undefined")
-   //   window.close()
+      window.close()
 }
 
 export function delay(
