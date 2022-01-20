@@ -1,7 +1,7 @@
 import { useEffect, useReducer } from "react"
 import { Transition, TransitionGroup } from "react-transition-group"
 import classNames from "classnames"
-import {closeWindow, delay, getRandom, getRandomFloat, shuffle} from "./utils"
+import {closeWindow, delay, getRandom, getRandomFloat, isPhoto } from "./utils"
 import { Photo } from "./photo"
 import { getFlickrPhotos } from "./flickrPhotos"
 import { getLocalPhotos } from "./localPhotos"
@@ -9,11 +9,11 @@ import styles from "./photoSlideshow.module.scss"
 
 // Choose the source for the photos you want to display:
 type GetPhotosFn = typeof getFlickrPhotos | typeof getLocalPhotos
-const GET_PHOTOS: GetPhotosFn = getFlickrPhotos
+const GET_PHOTOS: GetPhotosFn = getLocalPhotos
 
 // Keep these in sync with photoSlideshow.module.scss:
-const PHOTO_INTERVAL = 30
-const FADE_IN_DURATION = 5
+const PHOTO_INTERVAL = 5
+const FADE_IN_DURATION = 1
 
 const SECONDS = 1000
 
@@ -34,7 +34,6 @@ export function PhotoSlideshow()
 
             console.log(`${photos.length} photos found that meet criteria`)
 
-            shuffle(photos)
             dispatch({ type: "load", photos })
          }
          catch(err: any)
@@ -73,6 +72,40 @@ export function PhotoSlideshow()
       await delay(100)
 
       dispatch({ type: "imageload" })
+	   findNextPhoto()
+   }
+
+	/**
+	 * Looks for the next image that is a photo
+	 */
+	async function findNextPhoto()
+   {
+	   //find the next image that is a photo...
+	   let currentPhotoID = state.photoIdx
+	   while(true)
+	   {
+		   currentPhotoID++
+		   if (currentPhotoID >= state.photos.length)
+			   currentPhotoID = 0
+
+		   //if we've looped all the way through, then we have nothing more to do...
+		   if (currentPhotoID === state.photoIdx)
+			   return
+
+		   //if we haven't inspected this image yet...
+		   if (state.photos[currentPhotoID].isPhoto === undefined)
+		   {
+			   if (await isPhoto(state.photos[currentPhotoID].url))
+			   {
+				   dispatch({ type: "updatephoto", id:currentPhotoID, isPhoto:true })
+				   return
+			   }
+			   else
+			   {
+				   dispatch({ type: "updatephoto", id:currentPhotoID, isPhoto:false })
+			   }
+		   }
+	   }
    }
 
    return (
@@ -89,12 +122,11 @@ export function PhotoSlideshow()
 							className={styles.photoBackground}
                            src={state.photos[state.photoIdx].url}
                            alt=""
-                           onLoad={onImageLoad}
                            onError={e => dispatch({ type: "next" })}
                         />
                         <div
 							className={styles.photoForeground}
-							style={{transform: `scale(${state.scale})`, transformOrigin: `${state.origin.x}% ${state.origin.y}%`}}
+							style={{transform: `scale(${state.scale}) rotate(${state.rotation}deg)`, transformOrigin: `${state.origin.x}% ${state.origin.y}%`}}
                         >
 							<img
 								src={state.photos[state.photoIdx].url}
@@ -125,6 +157,7 @@ interface State
    zIndex: number,
    origin: { x: number, y: number },
    scale: number,
+   rotation: number,
    isImageLoaded: boolean,
 }
 
@@ -135,6 +168,7 @@ const initialState: State =
    zIndex: 0,
    origin: { x: 0, y: 0 },
    scale: 1,
+   rotation: 0,
    isImageLoaded: false,
 }
 
@@ -154,37 +188,88 @@ interface ActionImageLoad
    type: "imageload"
 }
 
-type Action = ActionLoad | ActionNext | ActionImageLoad
+interface ActionUpdatePhoto
+{
+   type: "updatephoto",
+	id:number,
+	isPhoto:boolean
+}
+
+type Action = ActionLoad | ActionNext | ActionImageLoad | ActionUpdatePhoto
 
 function reducer(
    state: State,
    action: Action)
 : State
 {
+	let currentPhotoID = -1
+
    switch(action.type)
    {
+	   case "updatephoto":
+		   return {
+			   ...state,
+			   photos: state.photos.map(
+				   (photo, i) => i === action.id ?
+					   {...photo, isPhoto: action.isPhoto}
+					   :photo
+			   )
+		   }
+
       case "load":
+		  //find the first image that is a photo...
+		  while(currentPhotoID < action.photos.length - 1)
+		  {
+			  currentPhotoID++
+			  if (action.photos[currentPhotoID].isPhoto)
+				  break
+		  }
+
          return {
             photos: action.photos,
-            photoIdx: 0,
+            photoIdx: currentPhotoID,
             zIndex: 1,
             origin: getRandomOrigin(),
             scale: getRandomScale(),
+            rotation: getRandomRotation(),
             isImageLoaded: false
          }
 
       case "next":
+		  //find the next image that is a photo...
+		  let previousPhotoID = state.photoIdx
+		  currentPhotoID = state.photoIdx
+		  while(true)
+		  {
+			  currentPhotoID++
+			  if (currentPhotoID >= state.photos.length)
+				  currentPhotoID = 0
+
+			  //if we've looped all the way through, then we have no photos so just display the next image...
+			  if (currentPhotoID === previousPhotoID)
+			  {
+				  currentPhotoID++
+				  if (currentPhotoID >= state.photos.length)
+					  currentPhotoID = 0
+				  break
+			  }
+
+			  if (state.photos[currentPhotoID].isPhoto)
+				  break
+		  }
+
          return {
             ...state,
-            photoIdx: (state.photoIdx >= state.photos.length - 1) ? 0 : state.photoIdx + 1,
+            photoIdx: currentPhotoID,
             zIndex: state.zIndex + 1,
             origin: getRandomOrigin(),
             scale: getRandomScale(),
+			 rotation: getRandomRotation(),
             isImageLoaded: false,
          }
 
       case "imageload":
-         return { ...state, isImageLoaded: true, scale: getRandomScale() }
+         return { ...state, isImageLoaded: true, scale: getRandomScale(), rotation: getRandomRotation() }
    }
 }
 
@@ -196,6 +281,11 @@ function getRandomOrigin()
 function getRandomScale()
 {
    return getRandomFloat(0.8, 1.2)
+}
+
+function getRandomRotation()
+{
+   return getRandomFloat(-3, 3)
 }
 
 function getCaption(

@@ -29,6 +29,7 @@
     "@types/three": "^0.133.1",
     "classnames": "^2.3.1",
     "electron": "^15.2.0",
+    "get-pixels": "^3.3.3",
     "glea": "^1.3.1",
     "glob": "^7.2.0",
     "grunt": "^1.4.1",
@@ -80,5 +81,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@types/get-pixels": "^3.3.2"
   }
 }

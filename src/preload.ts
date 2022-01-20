@@ -18,6 +18,7 @@ function getLocalPhotos(): Photo[]
 		url: `file:///${folderPath}${fn}`,
 		title: "",
 		attribution: "",
+		isPhoto: undefined
 	}))
 
 	return photos

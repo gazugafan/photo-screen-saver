@@ -2,6 +2,7 @@
 
 import { FLICKR_API_KEY } from "./constants"
 import { Photo } from "./photo"
+import { shuffle } from "./utils"
 
 // Group: Flickr's Best Landscape Photographers (Post 1 Award 2)
 const FLICKR_URL = `https://api.flickr.com/services/rest?api_key=${FLICKR_API_KEY}&method=flickr.photos.search&group_id=830711%40N25&orientation=landscape&dimension_search_mode=min&width=2048&sort=date-posted-desc&format=json&nojsoncallback=1&extras=url_k,owner_name&per_page=500`
@@ -71,8 +72,9 @@ export async function getFlickrPhotos(): Promise<Photo[]>
             height: parseFloat(photo.height_k),
             title: photo.title,
             attribution: `© ${photo.ownername} / Flickr`,
+			 isPhoto: true
          }))
-         .filter(photo => 
+         .filter(photo =>
          {
             const aspectRatio = photo.width / photo.height
             return photo.width >= 1600 && aspectRatio >= 1.5 && aspectRatio <= 1.9
@@ -83,5 +85,6 @@ export async function getFlickrPhotos(): Promise<Photo[]>
       currPage++
    }
 
+   shuffle(photos)
    return photos
 }
